@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/octobit/heimdall-cli/internal/api"
+	"github.com/octobit/heimdall-cli/internal/config"
 	"github.com/spf13/cobra"
 )
 
@@ -32,4 +34,15 @@ func Execute() {
 func init() {
 	rootCmd.PersistentFlags().StringVar(&profileFlag, "profile", "", "config profile to use (default: default_profile from config file)")
 	rootCmd.PersistentFlags().BoolVar(&jsonFlag, "json", false, "output as JSON instead of table")
+}
+
+func clientFromFlags() (*api.Client, error) {
+	profile, err := config.Load("", profileFlag)
+	if err != nil {
+		return nil, err
+	}
+	if profile.BaseURL == "" {
+		return nil, fmt.Errorf("base_url is not set in profile — run 'heimdall configure'")
+	}
+	return api.NewClient(profile.APIKey, profile.BaseURL), nil
 }
