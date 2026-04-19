@@ -1,0 +1,57 @@
+# .goreleaser.yaml
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+    - go test ./...
+
+builds:
+  - id: heimdall
+    binary: heimdall
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+
+archives:
+  - id: heimdall
+    name_template: "heimdall_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - docs/README.md
+      - docs/commands.md
+      - docs/mcp.md
+
+checksum:
+  name_template: "checksums.txt"
+
+release:
+  github:
+    owner: octobit
+    name: heimdall-cli
+
+brews:
+  - name: heimdall
+    repository:
+      owner: octobit
+      name: homebrew-tap
+    homepage: https://heimdall.io
+    description: "Heimdall CLI — query observability data from your terminal or AI agent"
+    license: MIT
+    install: |
+      bin.install "heimdall"
+    test: |
+      system "#{bin}/heimdall", "--version"
