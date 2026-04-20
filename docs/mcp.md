@@ -1,15 +1,20 @@
 # Heimdall MCP Server
 
-The `heimdall mcp` command starts a Model Context Protocol (MCP) server on stdin/stdout.
-This lets AI agents like Claude query your Heimdall telemetry data as native tools —
-no CLI invocation or output parsing required.
+The `heimdall mcp` command starts a [Model Context Protocol](https://modelcontextprotocol.io) (MCP) server on stdin/stdout.
+MCP is an open standard — any compatible AI client can connect to it and query your Heimdall telemetry data as native tools, with no CLI invocation or output parsing required.
 
 ## Prerequisites
 
 - Heimdall CLI installed
-- A **Read-only API key** from the Heimdall dashboard
+- A **Read-only API key** from the Heimdall dashboard (Settings > API Keys > New Key > Read-only)
 
-## Setup: Claude Desktop
+## How it works
+
+The MCP server speaks JSON-RPC over stdin/stdout. Your AI client starts the `heimdall mcp` process and communicates with it directly. Heimdall acts as a data source — it never calls any AI API itself.
+
+## Setup by client
+
+### Claude Desktop
 
 Edit `~/.claude/claude_desktop_config.json` (create if missing):
 
@@ -28,15 +33,68 @@ Edit `~/.claude/claude_desktop_config.json` (create if missing):
 }
 ```
 
-Restart Claude Desktop. You'll see a hammer icon in the chat input indicating tools are available.
+Restart Claude Desktop. A hammer icon will appear in the chat input when tools are available.
 
-## Setup: Claude Code (CLI)
+### Claude Code (CLI)
 
 ```bash
 export HEIMDALL_API_KEY=hm_read_your_key_here
 export HEIMDALL_BASE_URL=https://api.yourdomain.com
 claude mcp add heimdall -- heimdall mcp
 ```
+
+### Cursor
+
+Open Cursor Settings > MCP and add a new server:
+
+```json
+{
+  "heimdall": {
+    "command": "heimdall",
+    "args": ["mcp"],
+    "env": {
+      "HEIMDALL_API_KEY": "hm_read_your_key_here",
+      "HEIMDALL_BASE_URL": "https://api.yourdomain.com"
+    }
+  }
+}
+```
+
+### Windsurf
+
+Edit `~/.codeium/windsurf/mcp_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "heimdall": {
+      "command": "heimdall",
+      "args": ["mcp"],
+      "env": {
+        "HEIMDALL_API_KEY": "hm_read_your_key_here",
+        "HEIMDALL_BASE_URL": "https://api.yourdomain.com"
+      }
+    }
+  }
+}
+```
+
+### Other MCP-compatible clients
+
+The server configuration is always the same pattern:
+
+```json
+{
+  "command": "heimdall",
+  "args": ["mcp"],
+  "env": {
+    "HEIMDALL_API_KEY": "hm_read_your_key_here",
+    "HEIMDALL_BASE_URL": "https://api.yourdomain.com"
+  }
+}
+```
+
+Refer to your client's documentation for where to place this configuration.
 
 ## Available tools
 
@@ -59,4 +117,4 @@ claude mcp add heimdall -- heimdall mcp
 
 ## Zero AI cost for Heimdall
 
-The MCP server does not call any AI API. It only queries the Heimdall API and returns structured data. All AI usage costs belong to your own Claude account.
+The MCP server does not call any AI API. It only queries the Heimdall API and returns structured data. All AI usage costs belong to your own AI client account.

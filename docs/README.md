@@ -47,7 +47,7 @@ heimdall errors list --level critical
 heimdall errors get <id>
 ```
 
-4. Connect to Claude for AI-powered debugging — see [MCP Setup](mcp.md)
+4. Connect to any AI agent via MCP for AI-powered debugging — see [MCP Setup](mcp.md)
 
 ## Running locally (development)
 
@@ -106,21 +106,27 @@ heimdall perf list --target-type http
 heimdall errors list --json | jq '.items[0]'
 ```
 
-### 5. Use as an MCP server with Claude Code
+### 5. Use as an MCP server with any AI agent
+
+`heimdall mcp` implements the [Model Context Protocol](https://modelcontextprotocol.io) — an open standard supported by Claude, Cursor, Windsurf, Zed, Continue.dev, and any other MCP-compatible client.
 
 ```bash
 export HEIMDALL_API_KEY=hm_read_your_key_here
 export HEIMDALL_BASE_URL=http://localhost:8000
 
+# Claude Code
 claude mcp add heimdall -- heimdall mcp
+
+# Cursor / Windsurf / other clients — add to their MCP config:
+# { "command": "heimdall", "args": ["mcp"], "env": { "HEIMDALL_API_KEY": "...", "HEIMDALL_BASE_URL": "..." } }
 ```
 
-Once added, you can ask Claude:
+Once connected, you can ask your AI agent:
 - *"List the critical errors from Heimdall"*
 - *"Read error `abc-123` and propose a fix"*
 - *"Which endpoints are slowest this week?"*
 
-See [mcp.md](mcp.md) for full MCP setup instructions including Claude Desktop.
+See [mcp.md](mcp.md) for full setup instructions for each client.
 
 ## Full command reference
 
