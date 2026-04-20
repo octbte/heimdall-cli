@@ -53,4 +53,3 @@ homebrew_casks:
       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
     homepage: https://heimdall.io
     description: "Heimdall CLI — query observability data from your terminal or AI agent"
-    binary: heimdall
