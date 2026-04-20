@@ -90,7 +90,7 @@ Or use the interactive wizard to save a named profile:
 heimdall configure
 # Profile name [default]: local
 # Read-only API key (hm_read_...): hm_read_your_key_here
-# Heimdall base URL [https://api.heimdall.io]: http://localhost:8000
+# Heimdall base URL [https://api.heimdall-ob.com]: http://localhost:8000
 ```
 
 ### 4. Query your data

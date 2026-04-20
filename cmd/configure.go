@@ -27,7 +27,7 @@ Create a Read-only API key first in the Heimdall dashboard (Settings > API Keys)
 		if apiKey == "" {
 			return fmt.Errorf("API key is required")
 		}
-		baseURL := prompt(r, "Heimdall base URL", "https://api.heimdall.io")
+		baseURL := prompt(r, "Heimdall base URL", "https://api.heimdall-ob.com")
 
 		fmt.Print("Testing connection... ")
 		client := api.NewClient(apiKey, baseURL)

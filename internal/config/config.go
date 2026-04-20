@@ -22,7 +22,7 @@ func Load(cfgFile, profileName string) (*Profile, error) {
 	if key := os.Getenv("HEIMDALL_API_KEY"); key != "" {
 		baseURL := os.Getenv("HEIMDALL_BASE_URL")
 		if baseURL == "" {
-			baseURL = "https://api.heimdall.io"
+			baseURL = "https://api.heimdall-ob.com"
 		}
 		return &Profile{APIKey: key, BaseURL: baseURL}, nil
 	}
