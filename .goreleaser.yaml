@@ -29,7 +29,7 @@ archives:
     name_template: "heimdall_{{ .Os }}_{{ .Arch }}"
     format_overrides:
       - goos: windows
-        format: zip
+        formats: [zip]
     files:
       - docs/README.md
       - docs/commands.md
@@ -40,12 +40,12 @@ checksum:
 
 release:
   github:
-    owner: octobit
+    owner: octbte
     name: heimdall-cli
   extra_files:
     - glob: install.sh
 
-brews:
+homebrew_casks:
   - name: heimdall
     repository:
       owner: octbte
@@ -53,8 +53,4 @@ brews:
       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
     homepage: https://heimdall.io
     description: "Heimdall CLI — query observability data from your terminal or AI agent"
-    license: MIT
-    install: |
-      bin.install "heimdall"
-    test: |
-      system "#{bin}/heimdall", "--version"
+    binary: heimdall
