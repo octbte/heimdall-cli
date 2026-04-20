@@ -42,12 +42,15 @@ release:
   github:
     owner: octobit
     name: heimdall-cli
+  extra_files:
+    - glob: install.sh
 
 brews:
   - name: heimdall
     repository:
-      owner: octobit
+      owner: octbte
       name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
     homepage: https://heimdall.io
     description: "Heimdall CLI — query observability data from your terminal or AI agent"
     license: MIT
