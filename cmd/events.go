@@ -101,6 +101,8 @@ var eventsGetCmd = &cobra.Command{
 		fmt.Printf("  Project:     %s\n", e.ProjectID)
 		fmt.Printf("  Environment: %s\n", format.Deref(e.EnvironmentID, "-"))
 		fmt.Printf("  Correlation: %s\n", format.Deref(e.CorrelationID, "-"))
+		fmt.Printf("  Trace ID:    %s\n", format.Deref(e.TraceID, "-"))
+		fmt.Printf("  Span ID:     %s\n", format.Deref(e.SpanID, "-"))
 		if len(e.Metadata) > 0 {
 			fmt.Println("  Metadata:")
 			for k, v := range e.Metadata {

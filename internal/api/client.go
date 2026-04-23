@@ -144,3 +144,8 @@ func (c *Client) GetPerformance(id string) (*PerfItem, error) {
 	var out PerfItem
 	return &out, c.get("/performance/"+id, nil, &out)
 }
+
+func (c *Client) GetTrace(traceID string) (*TraceResponse, error) {
+	var out TraceResponse
+	return &out, c.get("/traces/"+traceID, nil, &out)
+}

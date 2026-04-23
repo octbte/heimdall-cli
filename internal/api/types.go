@@ -40,6 +40,9 @@ type EventItem struct {
 	EnvironmentID *string        `json:"environment_id"`
 	CorrelationID *string        `json:"correlation_id"`
 	RequestID     *string        `json:"request_id"`
+	TraceID       *string        `json:"trace_id"`
+	SpanID        *string        `json:"span_id"`
+	ParentSpanID  *string        `json:"parent_span_id"`
 	Metadata      map[string]any `json:"metadata"`
 	Tags          map[string]any `json:"tags"`
 }
@@ -63,6 +66,9 @@ type ErrorItem struct {
 	ProjectID     string         `json:"project_id"`
 	EnvironmentID *string        `json:"environment_id"`
 	CorrelationID *string        `json:"correlation_id"`
+	TraceID       *string        `json:"trace_id"`
+	SpanID        *string        `json:"span_id"`
+	ParentSpanID  *string        `json:"parent_span_id"`
 	Metadata      map[string]any `json:"metadata"`
 	Tags          map[string]any `json:"tags"`
 }
@@ -84,6 +90,9 @@ type PerfItem struct {
 	ProjectID     string         `json:"project_id"`
 	EnvironmentID *string        `json:"environment_id"`
 	CorrelationID *string        `json:"correlation_id"`
+	TraceID       *string        `json:"trace_id"`
+	SpanID        *string        `json:"span_id"`
+	ParentSpanID  *string        `json:"parent_span_id"`
 	Metadata      map[string]any `json:"metadata"`
 	Tags          map[string]any `json:"tags"`
 }
@@ -125,4 +134,21 @@ type ListPerfParams struct {
 	To          string
 	Limit       int
 	Offset      int
+}
+
+type TraceRecord struct {
+	ID           string     `json:"id"`
+	Type         string     `json:"type"` // "event" | "error" | "performance"
+	SpanID       *string    `json:"span_id"`
+	ParentSpanID *string    `json:"parent_span_id"`
+	Name         string     `json:"name"`
+	OccurredAt   time.Time  `json:"occurred_at"`
+	DurationMs   *int       `json:"duration_ms"`
+	Status       *string    `json:"status"`
+	Level        *string    `json:"level"`
+}
+
+type TraceResponse struct {
+	TraceID string        `json:"trace_id"`
+	Records []TraceRecord `json:"records"`
 }

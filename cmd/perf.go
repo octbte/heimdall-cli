@@ -102,6 +102,8 @@ var perfGetCmd = &cobra.Command{
 		fmt.Printf("  Occurred at: %s\n", p.OccurredAt.Format("2006-01-02 15:04:05 UTC"))
 		fmt.Printf("  Project:     %s\n", p.ProjectID)
 		fmt.Printf("  Correlation: %s\n", format.Deref(p.CorrelationID, "-"))
+		fmt.Printf("  Trace ID:    %s\n", format.Deref(p.TraceID, "-"))
+		fmt.Printf("  Span ID:     %s\n", format.Deref(p.SpanID, "-"))
 		if len(p.Metadata) > 0 {
 			fmt.Println("  Metadata:")
 			for k, v := range p.Metadata {

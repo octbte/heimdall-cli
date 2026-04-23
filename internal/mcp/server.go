@@ -168,6 +168,24 @@ func Serve(client *api.Client) error {
 		},
 	)
 
+	s.AddTool(
+		mcp.NewTool("get_trace",
+			mcp.WithDescription("Get all telemetry records (spans, events, errors) for a distributed trace by trace ID. Returns the full trace tree with span hierarchy, durations, and statuses. Use this to follow a request end-to-end across services."),
+			mcp.WithString("trace_id", mcp.Required(), mcp.Description("The trace ID (hex string, e.g. from trace_id field on an event, error, or performance record)")),
+		),
+		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			id := getString(req, "trace_id")
+			if id == "" {
+				return nil, fmt.Errorf("trace_id is required")
+			}
+			result, err := client.GetTrace(id)
+			if err != nil {
+				return nil, fmt.Errorf("get_trace: %w", err)
+			}
+			return jsonResult(result)
+		},
+	)
+
 	return server.ServeStdio(s)
 }
 

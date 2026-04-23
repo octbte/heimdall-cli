@@ -104,6 +104,8 @@ var errorsGetCmd = &cobra.Command{
 		fmt.Printf("  Occurred at: %s\n", e.OccurredAt.Format("2006-01-02 15:04:05 UTC"))
 		fmt.Printf("  Project:     %s\n", e.ProjectID)
 		fmt.Printf("  Correlation: %s\n", format.Deref(e.CorrelationID, "-"))
+		fmt.Printf("  Trace ID:    %s\n", format.Deref(e.TraceID, "-"))
+		fmt.Printf("  Span ID:     %s\n", format.Deref(e.SpanID, "-"))
 		if e.Stacktrace != nil && *e.Stacktrace != "" {
 			fmt.Printf("\nStacktrace:\n%s\n", *e.Stacktrace)
 		}
