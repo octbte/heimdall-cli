@@ -58,6 +58,10 @@ func InstallService(files []string, ingestKey string) error {
 		return fmt.Errorf("finding executable: %w", err)
 	}
 
+	if _, err := heimdallDir(); err != nil {
+		return fmt.Errorf("creating heimdall dir: %w", err)
+	}
+
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return err
