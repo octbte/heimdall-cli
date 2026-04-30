@@ -60,7 +60,7 @@ func TestBatchRetryBackoff(t *testing.T) {
 	mf := &mockFlusher{}
 	mf.fail.Store(true)
 
-	b := newBatcher(mf.flush, 500, 5*time.Second, 10_000)
+	b := newBatcher(mf.flush, 1, 5*time.Second, 10_000)
 	b.initialRetryDelay = 50 * time.Millisecond
 	b.maxRetryDelay = 200 * time.Millisecond
 	go b.run()

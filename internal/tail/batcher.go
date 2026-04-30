@@ -16,8 +16,9 @@ type batcher struct {
 	initialRetryDelay time.Duration
 	maxRetryDelay     time.Duration
 
-	mu  sync.Mutex
-	buf map[string][]Line
+	mu       sync.Mutex
+	buf      map[string][]Line
+	stopOnce sync.Once
 
 	addCh   chan Line
 	stopCh  chan struct{}
@@ -60,7 +61,7 @@ func (b *batcher) add(l Line) {
 }
 
 func (b *batcher) stop() {
-	close(b.stopCh)
+	b.stopOnce.Do(func() { close(b.stopCh) })
 }
 
 // run is the main loop: ingests lines and signals flushes by size or timer.
@@ -103,12 +104,10 @@ func (b *batcher) run() {
 				}
 			}
 			b.buf[l.SourceName] = append(b.buf[l.SourceName], l)
-			total = b.totalLines()
+			if b.totalLines() >= b.flushSize {
+				b.signalFlush()
+			}
 			b.mu.Unlock()
-
-			// Always signal the flusher: on size threshold flush immediately;
-			// on any add, the flusher picks it up (non-blocking signal).
-			b.signalFlush()
 
 		case <-ticker.C:
 			b.mu.Lock()
@@ -126,6 +125,12 @@ func (b *batcher) flusher() {
 	for {
 		select {
 		case <-b.stopCh:
+			// drain any pending flush signal so we don't drop lines buffered just before shutdown
+			select {
+			case <-b.flushCh:
+				b.doFlush()
+			default:
+			}
 			return
 		case <-b.flushCh:
 			b.doFlush()
