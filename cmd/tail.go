@@ -101,7 +101,7 @@ func runTail(client *api.Client, files []string, sourceName string, dur time.Dur
 		return err
 	}
 
-	b := tail.NewBatcher(flushFn, 500, 5*time.Second, 10_000)
+	b := tail.NewBatcher(flushFn, 500, 1*time.Second, 10_000)
 	var batcherWg sync.WaitGroup
 	batcherWg.Add(1)
 	go func() {
