@@ -108,11 +108,8 @@ func runTail(client *api.Client, files []string, sourceName string, dur time.Dur
 		defer batcherWg.Done()
 		b.Run()
 	}()
-	defer func() {
-		b.Stop()
-		batcherWg.Wait()
-	}()
 
+	var tailerWg sync.WaitGroup
 	var tailers []*tail.Tailer
 	for _, path := range files {
 		absPath, err := filepath.Abs(path)
@@ -125,18 +122,32 @@ func runTail(client *api.Client, files []string, sourceName string, dur time.Dur
 		}
 		t := tail.NewTailer(absPath, src, store, lines)
 		tailers = append(tailers, t)
-		go t.Run()
+		tailerWg.Add(1)
+		go func(t *tail.Tailer) {
+			defer tailerWg.Done()
+			t.Run()
+		}(t)
 	}
+
+	var forwardWg sync.WaitGroup
+	forwardWg.Add(1)
+	go func() {
+		defer forwardWg.Done()
+		for l := range lines {
+			b.Add(l)
+		}
+	}()
+
+	// Shutdown: stop tailers → wait for tailers → close lines → drain forwarder → stop batcher
 	defer func() {
 		for _, t := range tailers {
 			t.Stop()
 		}
-	}()
-
-	go func() {
-		for l := range lines {
-			b.Add(l)
-		}
+		tailerWg.Wait()  // wait for all tailers to finish writing to lines
+		close(lines)     // signal forwarder to drain and exit
+		forwardWg.Wait() // wait for forwarder to finish calling b.Add
+		b.Stop()
+		batcherWg.Wait()
 	}()
 
 	if dur > 0 {
