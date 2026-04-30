@@ -47,8 +47,8 @@ func (t *tailer) run() {
 		log.Printf("tail: could not load offset for %s: %v", t.path, err)
 	}
 
-	// seekEnd=true on first run (offset==0 and no saved state), false after rotation
-	f, inode, err := t.openAt(offset, offset == 0)
+	// seekEnd=true only on first run (no saved offset file); offset==0 after rotation means start of new file.
+	f, inode, err := t.openAt(offset, !t.store.exists(key))
 	if err != nil {
 		log.Printf("tail: could not open %s: %v", t.path, err)
 		return
@@ -110,7 +110,7 @@ func (t *tailer) run() {
 				}
 				reader = bufio.NewReader(f)
 				offset = 0
-				_ = t.store.save(key, 0)
+				t.store.delete(key) // delete so next restart reads from byte 0, not skips to end
 			}
 		}
 	}

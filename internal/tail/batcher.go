@@ -80,6 +80,18 @@ func (b *batcher) run() {
 	for {
 		select {
 		case <-b.stopCh:
+			// Drain any lines the forwarder put in addCh before stopping.
+		drainLoop:
+			for {
+				select {
+				case l := <-b.addCh:
+					b.mu.Lock()
+					b.buf[l.SourceName] = append(b.buf[l.SourceName], l)
+					b.mu.Unlock()
+				default:
+					break drainLoop
+				}
+			}
 			// Signal flusher to stop and wait for it.
 			b.signalFlush()
 			<-done

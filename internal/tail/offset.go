@@ -52,6 +52,16 @@ func (s *offsetStore) load(key string) (int64, error) {
 	return m["offset"], nil
 }
 
+func (s *offsetStore) delete(key string) {
+	os.Remove(filepath.Join(s.dir, key+".json"))
+}
+
+// exists reports whether an offset file exists for the given key.
+func (s *offsetStore) exists(key string) bool {
+	_, err := os.Stat(filepath.Join(s.dir, key+".json"))
+	return err == nil
+}
+
 // NewOffsetStore creates an offsetStore in ~/.heimdall/offsets.
 func NewOffsetStore() (*offsetStore, error) {
 	return newOffsetStore()
