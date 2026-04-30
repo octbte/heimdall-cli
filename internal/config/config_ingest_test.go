@@ -25,7 +25,7 @@ func TestLoadIngestAPIKeyFromEnv(t *testing.T) {
 func TestLoadIngestAPIKeyFromFile(t *testing.T) {
 	dir := t.TempDir()
 	cfgFile := filepath.Join(dir, "config.yaml")
-	yaml := `
+	cfgContent := `
 default_profile: default
 profiles:
   default:
@@ -33,7 +33,9 @@ profiles:
     base_url: https://example.com
     ingest_api_key: hm_live_fromfile
 `
-	os.WriteFile(cfgFile, []byte(yaml), 0600)
+	if err := os.WriteFile(cfgFile, []byte(cfgContent), 0600); err != nil {
+		t.Fatal(err)
+	}
 
 	p, err := config.Load(cfgFile, "")
 	if err != nil {
@@ -69,7 +71,7 @@ func TestSaveAndLoadIngestAPIKey(t *testing.T) {
 func TestListProfilesIncludesIngestKey(t *testing.T) {
 	dir := t.TempDir()
 	cfgFile := filepath.Join(dir, "config.yaml")
-	yaml := `
+	cfgContent := `
 default_profile: default
 profiles:
   default:
@@ -77,7 +79,9 @@ profiles:
     base_url: https://example.com
     ingest_api_key: hm_live_listed
 `
-	os.WriteFile(cfgFile, []byte(yaml), 0600)
+	if err := os.WriteFile(cfgFile, []byte(cfgContent), 0600); err != nil {
+		t.Fatal(err)
+	}
 
 	profiles, _, err := config.ListProfiles(cfgFile)
 	if err != nil {
