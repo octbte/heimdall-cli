@@ -38,7 +38,6 @@ func Daemonize(files []string, extraArgs []string) error {
 	if err != nil {
 		return fmt.Errorf("opening log file: %w", err)
 	}
-	defer logFile.Close()
 
 	self, err := os.Executable()
 	if err != nil {
@@ -54,6 +53,7 @@ func Daemonize(files []string, extraArgs []string) error {
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
 
 	if err := cmd.Start(); err != nil {
+		logFile.Close()
 		return fmt.Errorf("starting daemon: %w", err)
 	}
 
@@ -62,6 +62,7 @@ func Daemonize(files []string, extraArgs []string) error {
 		return fmt.Errorf("writing PID file: %w", err)
 	}
 
+	logFile.Close() // parent's copy; child has inherited its own independent FD
 	fmt.Printf("Heimdall tail running in background (PID %d)\n", pid)
 	fmt.Printf("Logs: %s\n", logPath)
 	return nil
