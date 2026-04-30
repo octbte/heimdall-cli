@@ -24,13 +24,10 @@ func NewClient(apiKey, baseURL string) *Client {
 	}
 }
 
-// NewIngestClient creates a client that sends requests using an ingest API key.
+// NewIngestClient creates a client authenticated with an ingest-scoped API key.
+// The key must have ingest scope (hm_live_...) — not a read-only key.
 func NewIngestClient(ingestAPIKey, baseURL string) *Client {
-	return &Client{
-		apiKey:  ingestAPIKey,
-		baseURL: baseURL,
-		http:    &http.Client{Timeout: 15 * time.Second},
-	}
+	return NewClient(ingestAPIKey, baseURL)
 }
 
 func (c *Client) get(path string, params url.Values, out any) error {

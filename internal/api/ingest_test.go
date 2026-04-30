@@ -21,7 +21,9 @@ func TestIngestLogLines(t *testing.T) {
 		if r.Header.Get("X-API-Key") != "hm_live_test" {
 			t.Errorf("unexpected key %s", r.Header.Get("X-API-Key"))
 		}
-		json.NewDecoder(r.Body).Decode(&received)
+		if err := json.NewDecoder(r.Body).Decode(&received); err != nil {
+			t.Fatalf("decoding request body: %v", err)
+		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusAccepted)
 		json.NewEncoder(w).Encode(api.IngestLogLinesResponse{Ingested: 2})
