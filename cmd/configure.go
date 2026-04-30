@@ -28,6 +28,7 @@ Create a Read-only API key first in the Heimdall dashboard (Settings > API Keys)
 			return fmt.Errorf("API key is required")
 		}
 		baseURL := prompt(r, "Heimdall base URL", "https://api.heimdall-ob.com")
+		ingestKey := prompt(r, "Ingest API key (optional, required for 'heimdall tail')", "")
 
 		fmt.Print("Testing connection... ")
 		client := api.NewClient(apiKey, baseURL)
@@ -37,7 +38,11 @@ Create a Read-only API key first in the Heimdall dashboard (Settings > API Keys)
 		}
 		fmt.Println("OK")
 
-		if err := config.Save("", profileName, config.Profile{APIKey: apiKey, BaseURL: baseURL}); err != nil {
+		if err := config.Save("", profileName, config.Profile{
+			APIKey:       apiKey,
+			BaseURL:      baseURL,
+			IngestAPIKey: ingestKey,
+		}); err != nil {
 			return fmt.Errorf("saving config: %w", err)
 		}
 
