@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -22,6 +23,7 @@ type tailer struct {
 	store      *offsetStore
 	out        chan<- Line
 	stopCh     chan struct{}
+	stopOnce   sync.Once
 }
 
 func newTailer(path, sourceName string, store *offsetStore, out chan<- Line) *tailer {
@@ -35,7 +37,7 @@ func newTailer(path, sourceName string, store *offsetStore, out chan<- Line) *ta
 }
 
 func (t *tailer) stop() {
-	close(t.stopCh)
+	t.stopOnce.Do(func() { close(t.stopCh) })
 }
 
 func (t *tailer) run() {
@@ -76,11 +78,15 @@ func (t *tailer) run() {
 					if msg != "" {
 						offset, _ = f.Seek(0, io.SeekCurrent)
 						_ = t.store.save(key, offset)
-						t.out <- Line{
+						select {
+						case t.out <- Line{
 							SourceName: t.sourceName,
 							Message:    msg,
 							Level:      detectLevel(msg),
 							OccurredAt: time.Now().UTC(),
+						}:
+						case <-t.stopCh:
+							return
 						}
 					}
 				}
