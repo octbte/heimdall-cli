@@ -17,26 +17,32 @@ var configureCmd = &cobra.Command{
 	Short: "Configure a Heimdall profile interactively",
 	Long: `Interactive wizard to add a profile to ~/.heimdall/config.yaml.
 
-A profile stores a read-only API key and base URL for one Heimdall project.
-Create a Read-only API key first in the Heimdall dashboard (Settings > API Keys).`,
+A profile stores an optional read-only API key, an optional ingest API key,
+and a base URL for one Heimdall project. At least one key is required.
+
+  Read-only key (hm_read_...)  — needed for query commands (overview, events, errors, perf)
+  Ingest key   (hm_live_...)  — needed for 'heimdall tail'`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		r := bufio.NewReader(os.Stdin)
 
 		profileName := prompt(r, "Profile name", "default")
-		apiKey := prompt(r, "Read-only API key (hm_read_...)", "")
-		if apiKey == "" {
-			return fmt.Errorf("API key is required")
-		}
 		baseURL := prompt(r, "Heimdall base URL", "https://api.heimdall-ob.com")
-		ingestKey := prompt(r, "Ingest API key (optional, required for 'heimdall tail')", "")
+		apiKey := prompt(r, "Read-only API key (optional, hm_read_...)", "")
+		ingestKey := prompt(r, "Ingest API key (optional, hm_live_...)", "")
 
-		fmt.Print("Testing connection... ")
-		client := api.NewClient(apiKey, baseURL)
-		if _, err := client.GetOverview("", ""); err != nil {
-			fmt.Println("failed")
-			return fmt.Errorf("could not connect: %w", err)
+		if apiKey == "" && ingestKey == "" {
+			return fmt.Errorf("at least one API key is required (read-only or ingest)")
 		}
-		fmt.Println("OK")
+
+		if apiKey != "" {
+			fmt.Print("Testing connection... ")
+			client := api.NewClient(apiKey, baseURL)
+			if _, err := client.GetOverview("", ""); err != nil {
+				fmt.Println("failed")
+				return fmt.Errorf("could not connect: %w", err)
+			}
+			fmt.Println("OK")
+		}
 
 		if err := config.Save("", profileName, config.Profile{
 			APIKey:       apiKey,
@@ -46,7 +52,7 @@ Create a Read-only API key first in the Heimdall dashboard (Settings > API Keys)
 			return fmt.Errorf("saving config: %w", err)
 		}
 
-		fmt.Printf("\nProfile %q saved. Run 'heimdall overview' to get started.\n", profileName)
+		fmt.Printf("\nProfile %q saved.\n", profileName)
 		return nil
 	},
 }
