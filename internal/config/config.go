@@ -56,14 +56,15 @@ func Load(cfgFile, profileName string) (*Profile, error) {
 	}
 
 	apiKey := v.GetString(fmt.Sprintf("profiles.%s.api_key", profileName))
-	if apiKey == "" {
+	ingestKey := v.GetString(fmt.Sprintf("profiles.%s.ingest_api_key", profileName))
+	if apiKey == "" && ingestKey == "" {
 		return nil, fmt.Errorf("profile %q not found — run 'heimdall configure' to add it", profileName)
 	}
 
 	return &Profile{
 		APIKey:       apiKey,
 		BaseURL:      v.GetString(fmt.Sprintf("profiles.%s.base_url", profileName)),
-		IngestAPIKey: v.GetString(fmt.Sprintf("profiles.%s.ingest_api_key", profileName)),
+		IngestAPIKey: ingestKey,
 	}, nil
 }
 
