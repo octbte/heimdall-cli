@@ -24,6 +24,11 @@ Configure once with 'heimdall configure', then query your project data.
 Use 'heimdall mcp' to start the MCP server for AI agent integration.`,
 }
 
+// SetVersion is called from main with the value injected via ldflags.
+func SetVersion(v string) {
+	rootCmd.Version = v
+}
+
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)

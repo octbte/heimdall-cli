@@ -152,3 +152,21 @@ type TraceResponse struct {
 	TraceID string        `json:"trace_id"`
 	Records []TraceRecord `json:"records"`
 }
+
+// LogLineInput is one log line sent to POST /api/v1/ingest/log-lines.
+type LogLineInput struct {
+	Message    string `json:"message"`
+	OccurredAt string `json:"occurred_at,omitempty"`
+	Level      string `json:"level,omitempty"`
+}
+
+// IngestLogLinesRequest is the request body for POST /api/v1/ingest/log-lines.
+type IngestLogLinesRequest struct {
+	SourceName string         `json:"source_name"`
+	Lines      []LogLineInput `json:"lines"`
+}
+
+// IngestLogLinesResponse is the response body from POST /api/v1/ingest/log-lines.
+type IngestLogLinesResponse struct {
+	Ingested int `json:"ingested"`
+}

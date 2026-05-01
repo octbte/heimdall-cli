@@ -9,14 +9,17 @@ import (
 
 // Profile holds credentials for one Heimdall project.
 type Profile struct {
-	APIKey  string
-	BaseURL string
+	APIKey       string
+	BaseURL      string
+	IngestAPIKey string
 }
 
 // Load resolves credentials using this priority order:
 //  1. HEIMDALL_API_KEY / HEIMDALL_BASE_URL env vars
 //  2. profileName from cfgFile (or default_profile if profileName is "")
 //
+// IngestAPIKey is loaded from HEIMDALL_INGEST_API_KEY env var (only when HEIMDALL_API_KEY is set),
+// or from ingest_api_key field in the active profile YAML.
 // cfgFile may be "" to use the default path (~/.heimdall/config.yaml).
 func Load(cfgFile, profileName string) (*Profile, error) {
 	if key := os.Getenv("HEIMDALL_API_KEY"); key != "" {
@@ -24,7 +27,8 @@ func Load(cfgFile, profileName string) (*Profile, error) {
 		if baseURL == "" {
 			baseURL = "https://api.heimdall-ob.com"
 		}
-		return &Profile{APIKey: key, BaseURL: baseURL}, nil
+		ingestKey := os.Getenv("HEIMDALL_INGEST_API_KEY")
+		return &Profile{APIKey: key, BaseURL: baseURL, IngestAPIKey: ingestKey}, nil
 	}
 
 	v := viper.New()
@@ -57,8 +61,9 @@ func Load(cfgFile, profileName string) (*Profile, error) {
 	}
 
 	return &Profile{
-		APIKey:  apiKey,
-		BaseURL: v.GetString(fmt.Sprintf("profiles.%s.base_url", profileName)),
+		APIKey:       apiKey,
+		BaseURL:      v.GetString(fmt.Sprintf("profiles.%s.base_url", profileName)),
+		IngestAPIKey: v.GetString(fmt.Sprintf("profiles.%s.ingest_api_key", profileName)),
 	}, nil
 }
 
@@ -84,6 +89,11 @@ func Save(cfgFile, profileName string, profile Profile) error {
 
 	v.Set(fmt.Sprintf("profiles.%s.api_key", profileName), profile.APIKey)
 	v.Set(fmt.Sprintf("profiles.%s.base_url", profileName), profile.BaseURL)
+
+	// Only write ingest_api_key if non-empty
+	if profile.IngestAPIKey != "" {
+		v.Set(fmt.Sprintf("profiles.%s.ingest_api_key", profileName), profile.IngestAPIKey)
+	}
 
 	if v.GetString("default_profile") == "" {
 		v.Set("default_profile", profileName)
@@ -115,8 +125,9 @@ func ListProfiles(cfgFile string) (map[string]Profile, string, error) {
 	raw := v.GetStringMap("profiles")
 	for name := range raw {
 		profiles[name] = Profile{
-			APIKey:  v.GetString(fmt.Sprintf("profiles.%s.api_key", name)),
-			BaseURL: v.GetString(fmt.Sprintf("profiles.%s.base_url", name)),
+			APIKey:       v.GetString(fmt.Sprintf("profiles.%s.api_key", name)),
+			BaseURL:      v.GetString(fmt.Sprintf("profiles.%s.base_url", name)),
+			IngestAPIKey: v.GetString(fmt.Sprintf("profiles.%s.ingest_api_key", name)),
 		}
 	}
 

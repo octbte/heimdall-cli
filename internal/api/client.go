@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -21,6 +22,12 @@ func NewClient(apiKey, baseURL string) *Client {
 		baseURL: baseURL,
 		http:    &http.Client{Timeout: 15 * time.Second},
 	}
+}
+
+// NewIngestClient creates a client authenticated with an ingest-scoped API key.
+// The key must have ingest scope (hm_live_...) — not a read-only key.
+func NewIngestClient(ingestAPIKey, baseURL string) *Client {
+	return NewClient(ingestAPIKey, baseURL)
 }
 
 func (c *Client) get(path string, params url.Values, out any) error {
@@ -59,6 +66,45 @@ func (c *Client) get(path string, params url.Values, out any) error {
 	}
 
 	return json.NewDecoder(resp.Body).Decode(out)
+}
+
+func (c *Client) post(path string, body any, out any) error {
+	buf := &bytes.Buffer{}
+	if err := json.NewEncoder(buf).Encode(body); err != nil {
+		return fmt.Errorf("encoding request: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodPost, c.baseURL+"/api/v1"+path, buf)
+	if err != nil {
+		return fmt.Errorf("creating request: %w", err)
+	}
+	req.Header.Set("X-API-Key", c.apiKey)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return fmt.Errorf("request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
+		var errResp struct {
+			Error struct {
+				Code    string `json:"code"`
+				Message string `json:"message"`
+			} `json:"error"`
+		}
+		if jsonErr := json.NewDecoder(resp.Body).Decode(&errResp); jsonErr == nil && errResp.Error.Message != "" {
+			return fmt.Errorf("API error %d (%s): %s", resp.StatusCode, errResp.Error.Code, errResp.Error.Message)
+		}
+		return fmt.Errorf("API returned status %d", resp.StatusCode)
+	}
+
+	if out != nil {
+		return json.NewDecoder(resp.Body).Decode(out)
+	}
+	return nil
 }
 
 func setIfNotEmpty(params url.Values, key, val string) {
@@ -148,4 +194,11 @@ func (c *Client) GetPerformance(id string) (*PerfItem, error) {
 func (c *Client) GetTrace(traceID string) (*TraceResponse, error) {
 	var out TraceResponse
 	return &out, c.get("/traces/"+traceID, nil, &out)
+}
+
+// IngestLogLines sends a batch of log lines for one source to the backend.
+func (c *Client) IngestLogLines(sourceName string, lines []LogLineInput) (*IngestLogLinesResponse, error) {
+	req := IngestLogLinesRequest{SourceName: sourceName, Lines: lines}
+	var out IngestLogLinesResponse
+	return &out, c.post("/ingest/log-lines", req, &out)
 }
