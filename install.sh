@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-REPO="octobit/heimdall-cli"
+REPO="octbte/heimdall-cli"
 BINARY="heimdall"
 INSTALL_DIR="/usr/local/bin"
 
