@@ -103,11 +103,27 @@ func (t *tailer) run() {
 			newInode := inodeOf(t.path)
 			if newInode != 0 && newInode != inode {
 				f.Close()
-				f, inode, err = t.openAt(0, false)
-				if err != nil {
-					log.Printf("tail: could not reopen %s after rotation: %v", t.path, err)
+				// Retry reopening: the new file may not exist yet during the brief
+				// window between the old file being renamed and the new one created.
+				var newF *os.File
+				var newIno uint64
+				var reopenErr error
+				for attempt := 0; attempt < 10; attempt++ {
+					newF, newIno, reopenErr = t.openAt(0, false)
+					if reopenErr == nil {
+						break
+					}
+					select {
+					case <-t.stopCh:
+						return
+					case <-time.After(500 * time.Millisecond):
+					}
+				}
+				if reopenErr != nil {
+					log.Printf("tail: could not reopen %s after rotation: %v", t.path, reopenErr)
 					return
 				}
+				f, inode = newF, newIno
 				reader = bufio.NewReader(f)
 				offset = 0
 				t.store.delete(key) // delete so next restart reads from byte 0, not skips to end

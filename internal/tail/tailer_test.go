@@ -93,3 +93,43 @@ func TestTailerDetectsRotation(t *testing.T) {
 		t.Errorf("message=%q, want 'new file line'", got.Message)
 	}
 }
+
+func TestTailerDetectsRotationWithDelay(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "app.log")
+	if err := os.WriteFile(path, []byte("old content\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+
+	store := &offsetStore{dir: dir}
+	lines := make(chan Line, 20)
+
+	tl := newTailer(path, "app.log", store, lines)
+	go tl.run()
+	defer tl.stop()
+
+	time.Sleep(150 * time.Millisecond)
+	for len(lines) > 0 {
+		<-lines
+	}
+
+	// simulate compression gap: old file removed, new file appears after 800ms
+	if err := os.Remove(path); err != nil {
+		t.Fatal(err)
+	}
+	go func() {
+		time.Sleep(800 * time.Millisecond)
+		_ = os.WriteFile(path, []byte("after compression gap\n"), 0600)
+	}()
+
+	var got Line
+	timeout := time.After(5 * time.Second)
+	select {
+	case got = <-lines:
+	case <-timeout:
+		t.Fatal("timeout: tailer did not recover after rotation gap")
+	}
+	if got.Message != "after compression gap" {
+		t.Errorf("message=%q, want 'after compression gap'", got.Message)
+	}
+}
