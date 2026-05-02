@@ -133,3 +133,43 @@ func TestTailerDetectsRotationWithDelay(t *testing.T) {
 		t.Errorf("message=%q, want 'after compression gap'", got.Message)
 	}
 }
+
+func TestTailerRotationDuringDowntime(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "app.log")
+
+	// Write old content at a large offset that will be saved as the offset.
+	oldContent := "old line\n"
+	if err := os.WriteFile(path, []byte(oldContent), 0600); err != nil {
+		t.Fatal(err)
+	}
+
+	// Pre-seed the offset store with a large offset (simulating the tailer
+	// having read a large file before downtime).
+	store := &offsetStore{dir: dir}
+	key := store.key(path)
+	if err := store.save(key, 9999); err != nil {
+		t.Fatal(err)
+	}
+
+	// Simulate rotation during downtime: replace file with smaller new content.
+	if err := os.WriteFile(path, []byte("new line after downtime\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+
+	lines := make(chan Line, 10)
+	tl := newTailer(path, "app.log", store, lines)
+	go tl.run()
+	defer tl.stop()
+
+	var got Line
+	timeout := time.After(3 * time.Second)
+	select {
+	case got = <-lines:
+	case <-timeout:
+		t.Fatal("timeout: tailer did not recover after rotation during downtime")
+	}
+	if got.Message != "new line after downtime" {
+		t.Errorf("message=%q, want 'new line after downtime'", got.Message)
+	}
+}

@@ -55,6 +55,18 @@ func (t *tailer) run() {
 	}
 	defer f.Close()
 
+	// Detect rotation during downtime: if saved offset exceeds current file size,
+	// the file was replaced while the tailer was stopped. Reset to byte 0.
+	if offset > 0 {
+		if info, statErr := f.Stat(); statErr == nil && info.Size() < offset {
+			log.Printf("tail: saved offset %d exceeds file size %d for %s; rotation during downtime, resetting", offset, info.Size(), t.path)
+			if _, seekErr := f.Seek(0, io.SeekStart); seekErr == nil {
+				offset = 0
+				t.store.delete(key)
+			}
+		}
+	}
+
 	reader := bufio.NewReader(f)
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
