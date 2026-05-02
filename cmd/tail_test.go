@@ -56,7 +56,7 @@ profiles:
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		runTailWithConfig(cfgFile, logFile, 2*time.Second)
+		runTailWithConfig(cfgFile, logFile, 4*time.Second)
 	}()
 
 	time.Sleep(100 * time.Millisecond)
