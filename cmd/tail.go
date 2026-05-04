@@ -88,11 +88,16 @@ func runTail(client *api.Client, files []string, sourceName string, dur time.Dur
 
 	lines := make(chan tail.Line, 1000)
 
+	const maxMessageBytes = 4000
 	flushFn := func(src string, batch []tail.Line) error {
 		inputs := make([]api.LogLineInput, len(batch))
 		for i, l := range batch {
+			msg := l.Message
+			if len(msg) > maxMessageBytes {
+				msg = msg[:maxMessageBytes]
+			}
 			inputs[i] = api.LogLineInput{
-				Message:    l.Message,
+				Message:    msg,
 				Level:      l.Level,
 				OccurredAt: l.OccurredAt.Format(time.RFC3339),
 			}
