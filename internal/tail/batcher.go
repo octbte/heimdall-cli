@@ -161,22 +161,29 @@ func (b *batcher) doFlush() {
 	b.mu.Unlock()
 
 	for src, lines := range batch {
-		delay := b.initialRetryDelay
-		for {
-			if err := b.flush(src, lines); err != nil {
-				log.Printf("tail: flush failed for %s: %v, retrying in %s", src, err, delay)
-				select {
-				case <-b.stopCh:
-					return
-				case <-time.After(delay):
-				}
-				delay *= 2
-				if delay > b.maxRetryDelay {
-					delay = b.maxRetryDelay
-				}
-				continue
+		for i := 0; i < len(lines); i += b.flushSize {
+			end := i + b.flushSize
+			if end > len(lines) {
+				end = len(lines)
 			}
-			break
+			chunk := lines[i:end]
+			delay := b.initialRetryDelay
+			for {
+				if err := b.flush(src, chunk); err != nil {
+					log.Printf("tail: flush failed for %s: %v, retrying in %s", src, err, delay)
+					select {
+					case <-b.stopCh:
+						return
+					case <-time.After(delay):
+					}
+					delay *= 2
+					if delay > b.maxRetryDelay {
+						delay = b.maxRetryDelay
+					}
+					continue
+				}
+				break
+			}
 		}
 	}
 }
