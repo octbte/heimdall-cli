@@ -196,6 +196,21 @@ func (c *Client) GetTrace(traceID string) (*TraceResponse, error) {
 	return &out, c.get("/traces/"+traceID, nil, &out)
 }
 
+func (c *Client) GetLogLines(p ListLogLinesParams) (*LogLinesResponse, error) {
+	params := url.Values{}
+	setIfNotEmpty(params, "project_id", p.ProjectID)
+	setIfNotEmpty(params, "source_name", p.SourceName)
+	setIfNotEmpty(params, "level", p.Level)
+	setIfNotEmpty(params, "search", p.Search)
+	setIfNotEmpty(params, "from", p.From)
+	setIfNotEmpty(params, "to", p.To)
+	if p.Limit > 0 {
+		params.Set("limit", strconv.Itoa(p.Limit))
+	}
+	var out LogLinesResponse
+	return &out, c.get("/log-lines", params, &out)
+}
+
 // IngestLogLines sends a batch of log lines for one source to the backend.
 func (c *Client) IngestLogLines(sourceName string, lines []LogLineInput) (*IngestLogLinesResponse, error) {
 	req := IngestLogLinesRequest{SourceName: sourceName, Lines: lines}

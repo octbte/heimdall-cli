@@ -170,3 +170,26 @@ type IngestLogLinesRequest struct {
 type IngestLogLinesResponse struct {
 	Ingested int `json:"ingested"`
 }
+
+type LogLineItem struct {
+	ID         string    `json:"id"`
+	SourceName string    `json:"source_name"`
+	OccurredAt time.Time `json:"occurred_at"`
+	Level      string    `json:"level"`
+	Message    string    `json:"message"`
+}
+
+type LogLinesResponse struct {
+	Lines      []LogLineItem `json:"lines"`
+	NextCursor *string       `json:"next_cursor"`
+}
+
+type ListLogLinesParams struct {
+	ProjectID  string
+	SourceName string
+	Level      string
+	Search     string
+	From       string
+	To         string
+	Limit      int
+}

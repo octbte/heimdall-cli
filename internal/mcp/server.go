@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -181,6 +182,40 @@ func Serve(client *api.Client) error {
 			result, err := client.GetTrace(id)
 			if err != nil {
 				return nil, fmt.Errorf("get_trace: %w", err)
+			}
+			return jsonResult(result)
+		},
+	)
+
+	s.AddTool(
+		mcp.NewTool("get_log_lines",
+			mcp.WithDescription("Fetch raw log lines ingested via heimdall tail. Use this to analyze application logs — filter by time window, log level, source file, or keyword. Returns log lines with timestamp, level, source, and message."),
+			mcp.WithNumber("last_minutes", mcp.Description("Fetch logs from the last N minutes (e.g. 15). Takes priority over from/to when set.")),
+			mcp.WithString("from", mcp.Description("Start time filter (ISO 8601). Used when last_minutes is not set.")),
+			mcp.WithString("to", mcp.Description("End time filter (ISO 8601). Used when last_minutes is not set.")),
+			mcp.WithString("level", mcp.Description("Filter by log level, comma-separated: debug, info, warning, error, critical (e.g. 'error,critical')")),
+			mcp.WithString("source_name", mcp.Description("Filter by log source name (e.g. 'app.log', 'worker.log')")),
+			mcp.WithString("search", mcp.Description("Keyword search in log message text (case-insensitive)")),
+			mcp.WithNumber("limit", mcp.Description("Number of lines to return (default 500, max 2000)")),
+		),
+		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			from := getString(req, "from")
+			to := getString(req, "to")
+			if lastMin := getInt(req, "last_minutes", 0); lastMin > 0 {
+				now := time.Now().UTC()
+				from = now.Add(-time.Duration(lastMin) * time.Minute).Format(time.RFC3339)
+				to = now.Format(time.RFC3339)
+			}
+			result, err := client.GetLogLines(api.ListLogLinesParams{
+				SourceName: getString(req, "source_name"),
+				Level:      getString(req, "level"),
+				Search:     getString(req, "search"),
+				From:       from,
+				To:         to,
+				Limit:      getInt(req, "limit", 500),
+			})
+			if err != nil {
+				return nil, fmt.Errorf("get_log_lines: %w", err)
 			}
 			return jsonResult(result)
 		},
