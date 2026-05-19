@@ -50,6 +50,47 @@ func TestListEvents(t *testing.T) {
 	}
 }
 
+func TestGetLogLines(t *testing.T) {
+	nextCursor := "cursor-abc"
+	client, _ := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/v1/log-lines" {
+			t.Errorf("unexpected path %q", r.URL.Path)
+		}
+		if got := r.URL.Query().Get("level"); got != "error" {
+			t.Errorf("expected level=error, got %q", got)
+		}
+		if got := r.URL.Query().Get("limit"); got != "100" {
+			t.Errorf("expected limit=100, got %q", got)
+		}
+		if got := r.URL.Query().Get("source_name"); got != "app.log" {
+			t.Errorf("source_name = %q, want %q", got, "app.log")
+		}
+		if got := r.URL.Query().Get("search"); got != "payment" {
+			t.Errorf("search = %q, want %q", got, "payment")
+		}
+		json.NewEncoder(w).Encode(api.LogLinesResponse{
+			Lines: []api.LogLineItem{
+				{ID: "line-1", SourceName: "app.log", Level: "error", Message: "something went wrong"},
+			},
+			NextCursor: &nextCursor,
+		})
+	})
+
+	resp, err := client.GetLogLines(api.ListLogLinesParams{Level: "error", SourceName: "app.log", Search: "payment", Limit: 100})
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if len(resp.Lines) != 1 {
+		t.Fatalf("expected 1 line, got %d", len(resp.Lines))
+	}
+	if resp.Lines[0].ID != "line-1" {
+		t.Errorf("expected line ID %q, got %q", "line-1", resp.Lines[0].ID)
+	}
+	if resp.NextCursor == nil || *resp.NextCursor != "cursor-abc" {
+		t.Errorf("expected next_cursor %q, got %v", "cursor-abc", resp.NextCursor)
+	}
+}
+
 func TestAPIErrorResponse(t *testing.T) {
 	client, _ := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
